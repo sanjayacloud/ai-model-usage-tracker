@@ -1,12 +1,23 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
     "name": "sanjayacloud/ai-model-usage-tracker",
-    "description": "Track your AI model usage'",
+    "description": "Accurately track AI model usage, tokens, and cost in Laravel with automatic instrumentation, reporting, and an Inertia dashboard.",
     "keywords": [
         "laravel",
         "sanjayacloud",
+        "ai",
+        "usage",
+        "tokens",
+        "cost",
+        "openai",
+        "anthropic",
         "ai-model-usage-tracker"
     ],
+    "suggest": {
+        "laravel/ai": "Automatic usage instrumentation for the first-party Laravel AI SDK.",
+        "prism-php/prism": "Capture usage from Prism responses via capturePrism().",
+        "inertiajs/inertia-laravel": "Required to render the bundled Inertia/Vue usage dashboard."
+    },
     "homepage": "https://github.com/sanjayacloud/ai-model-usage-tracker",
     "license": "MIT",
     "authors": [
@@ -21,7 +32,9 @@
         "illuminate/support": "^12.0||^13.0"
     },
     "require-dev": {
+        "inertiajs/inertia-laravel": "^2.0",
         "larastan/larastan": "^3.9",
+        "laravel/ai": "^0.4",
         "laravel/pint": "^1.29",
         "laravel/pao": "^1.0",
         "orchestra/testbench": "^10.0||^11.0",
@@ -66,10 +79,10 @@
             "vendor/bin/pint --parallel --test"
         ],
         "analyse": [
-            "vendor/bin/phpstan analyse"
+            "@php -d memory_limit=1G vendor/bin/phpstan analyse"
         ],
         "test:types": [
-            "vendor/bin/pest --type-coverage --min=100"
+            "@php -d memory_limit=1G vendor/bin/pest --type-coverage --min=100"
         ],
         "test:unit": [
             "vendor/bin/pest --parallel"

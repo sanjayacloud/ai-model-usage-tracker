@@ -3,5 +3,5 @@
 declare(strict_types=1);
 
 return [
-    'placeholder' => 'AiModelUsageTracker placeholder translation.',
+    'dashboard_title' => 'AI Model Usage',
 ];
