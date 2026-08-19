@@ -97,6 +97,7 @@ class AiModelUsageTracker
         $record->fill([
             'invocation_id' => $data->invocationId,
             'conversation_id' => $data->conversationId,
+            'feature_key' => $data->featureKey,
             'driver' => $data->driver,
             'provider' => $data->provider,
             'model' => $data->model,

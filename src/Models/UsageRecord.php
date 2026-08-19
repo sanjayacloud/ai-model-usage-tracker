@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace AiModelUsageTracker\AiModelUsageTracker\Models;
 
+use AiModelUsageTracker\AiModelUsageTracker\Database\Factories\UsageRecordFactory;
 use AiModelUsageTracker\AiModelUsageTracker\Enums\Driver;
 use AiModelUsageTracker\AiModelUsageTracker\Enums\Operation;
 use AiModelUsageTracker\AiModelUsageTracker\Enums\UsageStatus;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Carbon;
@@ -18,6 +20,7 @@ use Illuminate\Support\Str;
  * @property string $uuid
  * @property string|null $invocation_id
  * @property string|null $conversation_id
+ * @property string|null $feature_key
  * @property Driver $driver
  * @property string|null $provider
  * @property string|null $model
@@ -46,6 +49,9 @@ use Illuminate\Support\Str;
  */
 class UsageRecord extends Model
 {
+    /** @use HasFactory<UsageRecordFactory> */
+    use HasFactory;
+
     protected $guarded = [];
 
     protected $casts = [
@@ -83,6 +89,11 @@ class UsageRecord extends Model
                 $record->uuid = (string) Str::uuid();
             }
         });
+    }
+
+    protected static function newFactory(): UsageRecordFactory
+    {
+        return UsageRecordFactory::new();
     }
 
     /**

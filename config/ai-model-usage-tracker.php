@@ -84,8 +84,14 @@ return [
     |--------------------------------------------------------------------------
     |
     | Rates are expressed per 1,000,000 tokens in the currency below. Costs are
-    | only computed for models present here; unknown models are recorded with a
-    | zero cost and a "pricing_missing" flag in metadata so they are auditable.
+    | only computed for models present here or in the fetched catalog; unknown
+    | models are recorded with a zero cost and a "pricing_missing" flag in
+    | metadata so they are auditable.
+    |
+    | Optional per-unit keys: "per_image", "per_second".
+    |
+    | Fetch (LiteLLM, then OpenRouter) is opt-in via "ai-usage:fetch-pricing"
+    | and never runs during request recording. Published "models" always win.
     |
     | Structure: 'provider' => ['model' => [
     |     'input', 'output', 'cache_write', 'cache_read', 'reasoning',
@@ -95,6 +101,11 @@ return [
 
     'pricing' => [
         'currency' => env('AI_USAGE_CURRENCY', 'USD'),
+        'fetch' => [
+            'enabled' => env('AI_USAGE_FETCH_PRICING', true),
+            'ttl_hours' => env('AI_USAGE_FETCH_TTL_HOURS', 24),
+            'timeout' => env('AI_USAGE_FETCH_TIMEOUT', 10),
+        ],
         'models' => [
             'openai' => [
                 'gpt-4o' => ['input' => 2.50, 'output' => 10.00, 'cache_read' => 1.25],
@@ -151,14 +162,16 @@ return [
     | Dashboard
     |--------------------------------------------------------------------------
     |
-    | The Inertia/Vue dashboard. Requires the host app to use Inertia + Vue.
-    | Access is protected by the "gate" ability; define it in a policy or via
-    | Gate::define(). When "enabled" is false no routes are registered.
+    | The dashboard. "driver" is "blade" (default, no frontend build) or
+    | "inertia" (requires Inertia + Vue and the published page component).
+    | Access is protected by the "gate" ability; define it via Gate::define().
+    | When "enabled" is false no routes are registered.
     |
     */
 
     'dashboard' => [
         'enabled' => env('AI_USAGE_DASHBOARD_ENABLED', true),
+        'driver' => env('AI_USAGE_DASHBOARD_DRIVER', 'blade'),
         'path' => env('AI_USAGE_DASHBOARD_PATH', 'ai-usage'),
         'middleware' => ['web'],
         'gate' => 'viewAiUsageDashboard',

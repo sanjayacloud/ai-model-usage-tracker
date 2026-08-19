@@ -43,6 +43,19 @@ it('renders the dashboard when the gate allows', function () {
         );
 });
 
+it('renders the blade dashboard when the driver is blade', function () {
+    config()->set('ai-model-usage-tracker.dashboard.driver', 'blade');
+    Gate::define('viewAiUsageDashboard', fn (?User $user = null) => true);
+
+    app(AiModelUsageTracker::class)->track()->provider('openai')->model('gpt-4o')->tokens(prompt: 10)->record();
+
+    $this->actingAs(dashboardUser())
+        ->get(route('ai-usage.dashboard'))
+        ->assertOk()
+        ->assertSee('AI usage', false)
+        ->assertSee('By model', false);
+});
+
 it('returns summary json from the api endpoint', function () {
     Gate::define('viewAiUsageDashboard', fn (?User $user = null) => true);
 

@@ -35,10 +35,6 @@ abstract class TestCase extends Orchestra
             'database' => ':memory:',
             'prefix' => '',
         ]);
-    }
-
-    protected function defineDatabaseMigrations(): void
-    {
-        $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
+        $app['config']->set('ai-model-usage-tracker.dashboard.driver', 'inertia');
     }
 }

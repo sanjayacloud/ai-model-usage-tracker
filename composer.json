@@ -1,7 +1,7 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
     "name": "sanjayacloud/ai-model-usage-tracker",
-    "description": "Accurately track AI model usage, tokens, and cost in Laravel with automatic instrumentation, reporting, and an Inertia dashboard.",
+    "description": "Accurately track AI model usage, tokens, and cost in Laravel with automatic instrumentation, reporting, and a Blade dashboard.",
     "keywords": [
         "laravel",
         "sanjayacloud",
@@ -45,7 +45,8 @@
     },
     "autoload": {
         "psr-4": {
-            "AiModelUsageTracker\\AiModelUsageTracker\\": "src/"
+            "AiModelUsageTracker\\AiModelUsageTracker\\": "src/",
+            "AiModelUsageTracker\\AiModelUsageTracker\\Database\\Factories\\": "database/factories/"
         }
     },
     "autoload-dev": {
@@ -103,7 +104,8 @@
                 "AiModelUsageTracker\\AiModelUsageTracker\\AiModelUsageTrackerServiceProvider"
             ],
             "aliases": {
-                "AiModelUsageTracker": "AiModelUsageTracker\\AiModelUsageTracker\\Facades\\AiModelUsageTracker"
+                "AiModelUsageTracker": "AiModelUsageTracker\\AiModelUsageTracker\\Facades\\AiModelUsageTracker",
+                "UsageTracker": "AiModelUsageTracker\\AiModelUsageTracker\\Facades\\UsageTracker"
             }
         }
     },

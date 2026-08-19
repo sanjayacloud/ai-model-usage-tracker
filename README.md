@@ -9,15 +9,17 @@
     <a href="https://packagist.org/packages/sanjayacloud/ai-model-usage-tracker"><img src="https://img.shields.io/packagist/dt/sanjayacloud/ai-model-usage-tracker.svg?style=flat-square" alt="Total Downloads"></a>
 </p>
 
-Accurately track AI model usage in your Laravel app: token counts, **computed cost**, latency, success/failure, per-user attribution, and per-conversation attribution. Capture usage automatically from the first-party [`laravel/ai`](https://github.com/laravel/ai) SDK (plus Prism and raw HTTP clients), or record it manually with a fluent API. Includes a headless reporting layer, budget alerts, and an optional Inertia/Vue dashboard.
+Accurately track AI model usage in your Laravel app: token counts, **computed cost**, latency, success/failure, per-user attribution, and per-conversation attribution. Capture usage automatically from the first-party [`laravel/ai`](https://github.com/laravel/ai) SDK (plus Prism and raw HTTP clients), or record it manually with a fluent API. Includes a headless reporting layer, budget alerts, auto-fetched pricing, and a Blade dashboard (Inertia/Vue optional).
 
 ## Features
 
 - **Automatic capture** for the `laravel/ai` SDK — no code changes required.
-- **Computed cost** from a configurable per-model pricing table (input, output, cache read/write, reasoning).
-- **Per-request, per-user, and per-conversation** attribution.
+- **Computed cost** from a configurable per-model pricing table (input, output, cache read/write, reasoning, per-image, per-second).
+- **Prefix matching** so dated model ids (`gpt-4o-2024-11-20`) resolve to catalog rates.
+- **Auto-fetched pricing** from LiteLLM (OpenRouter fallback) via `ai-usage:fetch-pricing` — never on the request path.
+- **Per-request, per-user, per-conversation, and feature-key** attribution.
 - **Reporting API** — totals, breakdowns by model/provider/operation, daily trends, top consumers.
-- **Budgets** with threshold events, **retention** pruning, and an optional **Inertia/Vue dashboard**.
+- **Budgets** with threshold events, **retention** pruning, and a **Blade dashboard** (Inertia/Vue optional).
 - **Sync or queued** persistence.
 
 ## Requirements
@@ -48,16 +50,19 @@ raw HTTP   ─┘
 composer require sanjayacloud/ai-model-usage-tracker
 ```
 
-The service provider and `AiModelUsageTracker` facade are auto-discovered.
+The service provider and `AiModelUsageTracker` facade are auto-discovered (`UsageTracker` is an alias).
 
-### Step 2 — Publish and run the migration
+### Step 2 — Run the migration
 
 ```bash
-php artisan vendor:publish --tag="ai-model-usage-tracker-migrations"
 php artisan migrate
 ```
 
-This creates the `ai_usage_records` table.
+Package migrations load automatically. Publishing them is optional — do **not** `vendor:publish --force` later or you will duplicate the create-table migration.
+
+```bash
+php artisan vendor:publish --tag="ai-model-usage-tracker-migrations"
+```
 
 ### Step 3 — Publish the config (recommended)
 
@@ -93,6 +98,30 @@ app(UsageReporter::class)->totals(); // ['records' => 1, 'total_tokens' => 1550,
 
 That's the full loop: capture → cost → report.
 
+### Upgrading from 1.0
+
+```bash
+composer update sanjayacloud/ai-model-usage-tracker
+php artisan migrate
+```
+
+Then schedule catalog refresh and reprice any rows that were recorded at `$0`:
+
+```php
+use Illuminate\Support\Facades\Schedule;
+
+Schedule::command('ai-usage:fetch-pricing')->daily();
+```
+
+```bash
+php artisan ai-usage:fetch-pricing
+php artisan ai-usage:reprice
+```
+
+If you already published migrations in 1.0, do **not** republish with `--force`. The new `feature_key` migration still loads from the package.
+
+The dashboard now defaults to Blade. Set `AI_USAGE_DASHBOARD_DRIVER=inertia` only if you already published the Vue page.
+
 ---
 
 ## Capturing usage
@@ -123,12 +152,13 @@ AiModelUsageTracker::for($user) // attribute to any Eloquent model
     ->operation(Operation::Chat)
     ->tokens(prompt: 1200, completion: 350, cacheRead: 800, reasoning: 120)
     ->conversation($conversationId) // optional, for per-conversation reporting
+    ->feature('support-bot')        // optional, for grouping by product feature
     ->latency(840)
-    ->meta(['feature' => 'support-bot'])
+    ->meta(['ticket_id' => 42])
     ->record();
 ```
 
-Available builder methods: `provider()`, `model()`, `operation()`, `tokens()`, `latency()`, `status()`, `failed()`, `streamed()`, `for()`, `conversation()`, `invocation()`, `meta()`, `startedAt()`, `endedAt()`, `record()`.
+Available builder methods: `provider()`, `model()`, `operation()`, `tokens()`, `latency()`, `status()`, `failed()`, `streamed()`, `for()`, `conversation()`, `feature()`, `invocation()`, `meta()`, `startedAt()`, `endedAt()`, `record()`.
 
 ### Prism
 
@@ -198,16 +228,31 @@ return response()->json([
 
 ## Cost accuracy
 
-Costs are computed from a configurable pricing table in `config/ai-model-usage-tracker.php`, with bundled rates for common OpenAI, Anthropic, and Gemini models, expressed **per 1,000,000 tokens**. Cached read/write and reasoning tokens are priced separately when rates are provided.
+Costs are computed from `pricing.models` in config, then from a **fetched catalog** if you run `ai-usage:fetch-pricing`. Bundled rates cover common OpenAI, Anthropic, and Gemini models, expressed **per 1,000,000 tokens**. Dated model ids match the longest catalog prefix (`gpt-4o-2024-11-20` → `gpt-4o`). Provider prefixes like `google/gemini-3.1-flash-lite` are stripped.
 
-> Requests for models **not** in the table are recorded with a **zero cost** and a `pricing_missing` flag in `metadata`, so gaps are auditable rather than silently wrong.
+> Requests for models **not** in config or the catalog are recorded with a **zero cost**, a `pricing_missing` flag in `metadata`, and a warning log so gaps are auditable.
+
+Published config **always wins** over fetched rates (use it for negotiated prices).
+
+### Auto-fetch (LiteLLM, then OpenRouter)
+
+Fetch does **not** run during `record()`. Refresh the catalog on a schedule:
+
+```bash
+php artisan ai-usage:fetch-pricing
+```
+
+```php
+use Illuminate\Support\Facades\Schedule;
+
+Schedule::command('ai-usage:fetch-pricing')->daily();
+```
+
+Disable with `AI_USAGE_FETCH_PRICING=false`. `--force` bypasses the cache TTL (default 24 hours).
 
 ### Adding pricing for a model
 
-If a model shows `$0` cost, add its rates.
-
-1. Publish the config (Step 3 above) if you haven't.
-2. Add the model under its provider in `pricing.models`. Rates are per 1M tokens:
+If a model shows `$0` cost, either fetch the catalog, or add an override:
 
 ```php
 'pricing' => [
@@ -220,15 +265,15 @@ If a model shows `$0` cost, add its rates.
 ],
 ```
 
-3. Clear the config cache so the new rate is picked up:
+Then reprice historical rows:
 
 ```bash
-php artisan config:clear
+php artisan ai-usage:reprice          # zero-cost / pricing_missing only
+php artisan ai-usage:reprice --all
+php artisan ai-usage:reprice --dry-run
 ```
 
-New records for that model will now be priced. Existing zero-cost rows are left untouched (recompute them yourself if you need a backfill).
-
-Supported rate keys: `input`, `output`, `cache_write`, `cache_read`, `reasoning`. Missing `cache_write`/`cache_read` fall back to `input`; missing `reasoning` falls back to `output`.
+Supported rate keys: `input`, `output`, `cache_write`, `cache_read`, `reasoning`, `per_image`, `per_second`. Missing `cache_write`/`cache_read` fall back to `input`; missing `reasoning` falls back to `output`.
 
 ---
 
@@ -309,30 +354,21 @@ Schedule::command('ai-usage:prune')->daily();
 
 ---
 
-## Dashboard (Inertia/Vue)
+## Dashboard
 
-Requires a host app using Inertia + Vue.
-
-### Step 1 — Publish the page component
-
-```bash
-php artisan vendor:publish --tag="ai-model-usage-tracker-assets"
-```
-
-### Step 2 — Build assets
-
-```bash
-npm run build
-```
-
-### Step 3 — Define the access gate
-
-The dashboard is served at the configured `dashboard.path` (default `/ai-usage`) and is protected by the `viewAiUsageDashboard` gate:
+A Blade dashboard is served at `/ai-usage` by default (no frontend build). Define the gate:
 
 ```php
 use Illuminate\Support\Facades\Gate;
 
 Gate::define('viewAiUsageDashboard', fn ($user) => $user->isAdmin());
+```
+
+To use the Inertia/Vue page instead, set `dashboard.driver` to `inertia`, publish the Vue page, and rebuild assets:
+
+```bash
+php artisan vendor:publish --tag="ai-model-usage-tracker-assets"
+npm run build
 ```
 
 Adjust `dashboard.path` and `dashboard.middleware` in config as needed.
@@ -350,6 +386,8 @@ This runs static analysis (PHPStan/Larastan), code style (Pint), 100% type cover
 ## Changelog
 
 Please see [CHANGELOG](CHANGELOG.md) for more information on what has changed recently.
+
+When cutting a GitHub Release, paste **that version’s notes only** — not the whole changelog file (the updater action would nest Unreleased into the previous release).
 
 ## License
 

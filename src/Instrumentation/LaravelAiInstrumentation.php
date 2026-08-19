@@ -10,6 +10,7 @@ use AiModelUsageTracker\AiModelUsageTracker\DataObjects\UsageData;
 use AiModelUsageTracker\AiModelUsageTracker\Enums\Driver;
 use AiModelUsageTracker\AiModelUsageTracker\Enums\Operation;
 use AiModelUsageTracker\AiModelUsageTracker\Enums\UsageStatus;
+use AiModelUsageTracker\AiModelUsageTracker\Support\TokenAttributes;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Contracts\Events\Dispatcher;
@@ -93,11 +94,11 @@ class LaravelAiInstrumentation implements UsageInstrumentation
             model: $meta->model ?? null,
             invocationId: $event->invocationId,
             conversationId: $response->conversationId ?? null,
-            promptTokens: $usage->promptTokens,
-            completionTokens: $usage->completionTokens,
-            cacheWriteInputTokens: $usage->cacheWriteInputTokens,
-            cacheReadInputTokens: $usage->cacheReadInputTokens,
-            reasoningTokens: $usage->reasoningTokens,
+            promptTokens: TokenAttributes::int($usage, 'promptTokens', 'inputTokens'),
+            completionTokens: TokenAttributes::int($usage, 'completionTokens', 'outputTokens'),
+            cacheWriteInputTokens: TokenAttributes::int($usage, 'cacheWriteInputTokens'),
+            cacheReadInputTokens: TokenAttributes::int($usage, 'cacheReadInputTokens'),
+            reasoningTokens: TokenAttributes::int($usage, 'reasoningTokens'),
             latencyMs: $this->latencyFor($event->invocationId),
             streamed: $streamed,
             startedAt: $this->startTimeFor($event->invocationId),
@@ -115,7 +116,7 @@ class LaravelAiInstrumentation implements UsageInstrumentation
             provider: $this->providerName($event),
             model: $event->model,
             invocationId: $event->invocationId,
-            promptTokens: $response->tokens,
+            promptTokens: TokenAttributes::int($response, 'tokens', 'promptTokens', 'inputTokens'),
             latencyMs: $this->latencyFor($event->invocationId),
             startedAt: $this->startTimeFor($event->invocationId),
             endedAt: CarbonImmutable::now(),
@@ -132,8 +133,8 @@ class LaravelAiInstrumentation implements UsageInstrumentation
             provider: $this->providerName($event),
             model: $event->model,
             invocationId: $event->invocationId,
-            promptTokens: $usage->promptTokens,
-            completionTokens: $usage->completionTokens,
+            promptTokens: TokenAttributes::int($usage, 'promptTokens', 'inputTokens'),
+            completionTokens: TokenAttributes::int($usage, 'completionTokens', 'outputTokens'),
             latencyMs: $this->latencyFor($event->invocationId),
             startedAt: $this->startTimeFor($event->invocationId),
             endedAt: CarbonImmutable::now(),
@@ -150,8 +151,8 @@ class LaravelAiInstrumentation implements UsageInstrumentation
             provider: $this->providerName($event),
             model: $event->model,
             invocationId: $event->invocationId,
-            promptTokens: $usage->promptTokens ?? 0,
-            completionTokens: $usage->completionTokens ?? 0,
+            promptTokens: $usage !== null ? TokenAttributes::int($usage, 'promptTokens', 'inputTokens') : 0,
+            completionTokens: $usage !== null ? TokenAttributes::int($usage, 'completionTokens', 'outputTokens') : 0,
             latencyMs: $this->latencyFor($event->invocationId),
             startedAt: $this->startTimeFor($event->invocationId),
             endedAt: CarbonImmutable::now(),

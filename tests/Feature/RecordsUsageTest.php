@@ -9,6 +9,12 @@ use AiModelUsageTracker\AiModelUsageTracker\Jobs\RecordUsageJob;
 use AiModelUsageTracker\AiModelUsageTracker\Models\UsageRecord;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Schema;
+
+it('loads package migrations without publishing', function () {
+    expect(Schema::hasTable('ai_usage_records'))->toBeTrue()
+        ->and(Schema::hasColumn('ai_usage_records', 'feature_key'))->toBeTrue();
+});
 
 it('records a manual usage entry with computed cost', function () {
     $record = app(AiModelUsageTracker::class)
@@ -56,6 +62,24 @@ it('queues recording when configured', function () {
 
     expect($result)->toBeNull();
     Queue::assertPushed(RecordUsageJob::class);
+});
+
+it('records a feature key', function () {
+    $record = app(AiModelUsageTracker::class)
+        ->track()
+        ->feature('support-bot')
+        ->model('gpt-4o')
+        ->tokens(prompt: 10)
+        ->record();
+
+    expect($record->feature_key)->toBe('support-bot');
+});
+
+it('creates records from the factory', function () {
+    $record = UsageRecord::factory()->create();
+
+    expect($record)->toBeInstanceOf(UsageRecord::class)
+        ->and($record->uuid)->not->toBeEmpty();
 });
 
 it('fetches usage for a specific invocation', function () {

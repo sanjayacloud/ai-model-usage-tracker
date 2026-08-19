@@ -29,6 +29,8 @@ class PendingUsage
 
     protected ?string $conversationId = null;
 
+    protected ?string $featureKey = null;
+
     protected int $promptTokens = 0;
 
     protected int $completionTokens = 0;
@@ -98,6 +100,13 @@ class PendingUsage
     public function conversation(string $conversationId): self
     {
         $this->conversationId = $conversationId;
+
+        return $this;
+    }
+
+    public function feature(string $featureKey): self
+    {
+        $this->featureKey = $featureKey;
 
         return $this;
     }
@@ -183,6 +192,7 @@ class PendingUsage
             model: $this->model,
             invocationId: $this->invocationId,
             conversationId: $this->conversationId,
+            featureKey: $this->featureKey,
             promptTokens: $this->promptTokens,
             completionTokens: $this->completionTokens,
             cacheWriteInputTokens: $this->cacheWriteInputTokens,
