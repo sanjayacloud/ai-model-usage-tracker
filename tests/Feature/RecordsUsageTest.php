@@ -72,6 +72,18 @@ it('queues recording when configured', function () {
     Queue::assertPushed(RecordUsageJob::class);
 });
 
+it('does not throw when the usage table cannot be written', function () {
+    Schema::drop('ai_usage_records');
+
+    $record = app(AiModelUsageTracker::class)
+        ->track()
+        ->model('gpt-4o')
+        ->tokens(prompt: 10)
+        ->record();
+
+    expect($record)->toBeNull();
+});
+
 it('records a feature key', function () {
     $record = app(AiModelUsageTracker::class)
         ->track()

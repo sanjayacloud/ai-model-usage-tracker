@@ -1,6 +1,12 @@
 # Release Notes
 
-## [Unreleased](https://github.com/sanjayacloud/ai-model-usage-tracker/compare/v1.1.1...HEAD)
+## [Unreleased](https://github.com/sanjayacloud/ai-model-usage-tracker/compare/v1.1.2...HEAD)
+
+## [v1.1.2](https://github.com/sanjayacloud/ai-model-usage-tracker/releases/tag/v1.1.2) - 2026-08-19
+
+### Fixed
+
+- Recording fails open: a database error while persisting usage is reported and returns null instead of taking down the host request.
 
 ## [v1.1.1](https://github.com/sanjayacloud/ai-model-usage-tracker/releases/tag/v1.1.1) - 2026-08-19
 

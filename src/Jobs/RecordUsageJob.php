@@ -11,6 +11,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Throwable;
 
 class RecordUsageJob implements ShouldQueue
 {
@@ -26,6 +27,10 @@ class RecordUsageJob implements ShouldQueue
 
     public function handle(AiModelUsageTracker $tracker): void
     {
-        $tracker->persist(UsageData::fromArray($this->payload));
+        try {
+            $tracker->persist(UsageData::fromArray($this->payload));
+        } catch (Throwable $exception) {
+            report($exception);
+        }
     }
 }

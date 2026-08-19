@@ -15,6 +15,7 @@ use Closure;
 use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
+use Throwable;
 
 class AiModelUsageTracker
 {
@@ -77,7 +78,13 @@ class AiModelUsageTracker
             return null;
         }
 
-        return $this->persist($data);
+        try {
+            return $this->persist($data);
+        } catch (Throwable $exception) {
+            report($exception);
+
+            return null;
+        }
     }
 
     /**
