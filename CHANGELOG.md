@@ -1,6 +1,12 @@
 # Release Notes
 
-## [Unreleased](https://github.com/sanjayacloud/ai-model-usage-tracker/compare/v1.1.0...HEAD)
+## [Unreleased](https://github.com/sanjayacloud/ai-model-usage-tracker/compare/v1.1.1...HEAD)
+
+## [v1.1.1](https://github.com/sanjayacloud/ai-model-usage-tracker/releases/tag/v1.1.1) - 2026-08-19
+
+### Fixed
+
+- Auto-loaded migrations no-op when the table or columns already exist, so apps that published 1.0 migrations can upgrade without a duplicate-table error.
 
 ## [v1.1.0](https://github.com/sanjayacloud/ai-model-usage-tracker/releases/tag/v1.1.0) - 2026-08-19
 

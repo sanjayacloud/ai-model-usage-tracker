@@ -118,7 +118,7 @@ php artisan ai-usage:fetch-pricing
 php artisan ai-usage:reprice
 ```
 
-If you already published migrations in 1.0, do **not** republish with `--force`. The new `feature_key` migration still loads from the package.
+If you already published migrations in 1.0, do **not** republish with `--force`. Package migrations load automatically and skip work when the table or columns already exist (so a second `create` will not fail). The new `feature_key` column is added on `php artisan migrate`.
 
 The dashboard now defaults to Blade. Set `AI_USAGE_DASHBOARD_DRIVER=inertia` only if you already published the Vue page.
 

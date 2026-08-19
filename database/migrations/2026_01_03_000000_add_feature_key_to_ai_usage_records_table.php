@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn($this->table(), 'feature_key')) {
+            return;
+        }
+
         Schema::table($this->table(), function (Blueprint $table) {
             $table->string('feature_key')->nullable()->index();
         });

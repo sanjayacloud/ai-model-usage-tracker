@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn($this->table(), 'conversation_id')) {
+            return;
+        }
+
         Schema::table($this->table(), function (Blueprint $table) {
             $table->string('conversation_id')->nullable()->index();
         });

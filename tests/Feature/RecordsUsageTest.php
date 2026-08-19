@@ -16,6 +16,14 @@ it('loads package migrations without publishing', function () {
         ->and(Schema::hasColumn('ai_usage_records', 'feature_key'))->toBeTrue();
 });
 
+it('does not recreate the usage table when it already exists', function () {
+    $migration = include dirname(__DIR__, 2).'/database/migrations/2026_01_01_000000_create_ai_usage_records_table.php';
+
+    $migration->up();
+
+    expect(Schema::hasTable('ai_usage_records'))->toBeTrue();
+});
+
 it('records a manual usage entry with computed cost', function () {
     $record = app(AiModelUsageTracker::class)
         ->track()
