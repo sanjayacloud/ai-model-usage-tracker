@@ -1,6 +1,6 @@
 # Release Notes
 
-## [Unreleased](https://github.com/sanjayacloud/ai-model-usage-tracker/compare/v1.1.2...HEAD)
+## [Unreleased](https://github.com/sanjayacloud/ai-model-usage-tracker/compare/v1.2.0...HEAD)
 
 ### Added
 
@@ -10,6 +10,15 @@
 - Livewire `<x-layouts.app>` and Breeze `<x-app-layout>` Blade wrappers.
 - React `Dashboard.tsx` page; Vue page restyled for the official starter-kit tokens.
 
+## [v1.2.0](https://github.com/sanjayacloud/ai-model-usage-tracker/compare/v1.1.2...v1.2.0) - 2026-08-23
+
+### Added
+
+- Starter-kit dashboard install: `php artisan ai-usage:install` detects Vue, React, or Livewire kits, publishes the matching page, and adds a sidebar / header link.
+- `dashboard.driver=auto`, `dashboard.layout` (`auto` / `starter-kit` / `standalone`), and `dashboard.kit`.
+- Inertia shared `aiUsageNavigation` prop for custom sidebars.
+- Livewire `<x-layouts.app>` and Breeze `<x-app-layout>` Blade wrappers.
+- React `Dashboard.tsx` page; Vue page restyled for the official starter-kit tokens.
 
 ## [v1.1.2](https://github.com/sanjayacloud/ai-model-usage-tracker/releases/tag/v1.1.2) - 2026-08-19
 
