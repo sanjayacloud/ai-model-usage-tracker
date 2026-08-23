@@ -7,18 +7,6 @@ use Illuminate\Foundation\Auth\User;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Testing\AssertableInertia;
 
-function dashboardUser(): User
-{
-    return new class extends User
-    {
-        protected $table = 'users';
-
-        public $exists = true;
-
-        protected $attributes = ['id' => 1];
-    };
-}
-
 it('forbids access when the gate denies', function () {
     Gate::define('viewAiUsageDashboard', fn (?User $user = null) => false);
 
