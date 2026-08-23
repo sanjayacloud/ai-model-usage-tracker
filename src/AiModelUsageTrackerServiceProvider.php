@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AiModelUsageTracker\AiModelUsageTracker;
 
 use AiModelUsageTracker\AiModelUsageTracker\Console\Commands\FetchPricingCommand;
+use AiModelUsageTracker\AiModelUsageTracker\Console\Commands\InstallDashboardCommand;
 use AiModelUsageTracker\AiModelUsageTracker\Console\Commands\PruneUsageCommand;
 use AiModelUsageTracker\AiModelUsageTracker\Console\Commands\ReportUsageCommand;
 use AiModelUsageTracker\AiModelUsageTracker\Console\Commands\RepriceUsageCommand;
@@ -14,7 +15,9 @@ use AiModelUsageTracker\AiModelUsageTracker\Instrumentation\LaravelAiInstrumenta
 use AiModelUsageTracker\AiModelUsageTracker\Instrumentation\PrismInstrumentation;
 use AiModelUsageTracker\AiModelUsageTracker\Pricing\Catalog\LiteLlmCatalog;
 use AiModelUsageTracker\AiModelUsageTracker\Pricing\Catalog\OpenRouterCatalog;
+use AiModelUsageTracker\AiModelUsageTracker\Support\DashboardNavigation;
 use Illuminate\Support\ServiceProvider;
+use Inertia\Inertia;
 
 class AiModelUsageTrackerServiceProvider extends ServiceProvider
 {
@@ -42,6 +45,8 @@ class AiModelUsageTrackerServiceProvider extends ServiceProvider
 
         $this->app->make(InstrumentationManager::class)->boot();
 
+        $this->shareInertiaNavigation();
+
         if (! $this->app->runningInConsole()) {
             return;
         }
@@ -58,6 +63,14 @@ class AiModelUsageTrackerServiceProvider extends ServiceProvider
             __DIR__.'/../resources/js' => resource_path('js/vendor/ai-model-usage-tracker'),
         ], ['ai-model-usage-tracker', 'ai-model-usage-tracker-assets']);
 
+        $this->publishes([
+            __DIR__.'/../resources/js/pages/AiUsage/Dashboard.vue' => resource_path('js/pages/AiUsage/Dashboard.vue'),
+        ], ['ai-model-usage-tracker', 'ai-model-usage-tracker-inertia-vue']);
+
+        $this->publishes([
+            __DIR__.'/../resources/js/pages/AiUsage/Dashboard.tsx' => resource_path('js/pages/AiUsage/Dashboard.tsx'),
+        ], ['ai-model-usage-tracker', 'ai-model-usage-tracker-inertia-react']);
+
         $this->publishesMigrations([
             __DIR__.'/../database/migrations' => database_path('migrations'),
         ], ['ai-model-usage-tracker', 'ai-model-usage-tracker-migrations']);
@@ -67,6 +80,16 @@ class AiModelUsageTrackerServiceProvider extends ServiceProvider
             PruneUsageCommand::class,
             FetchPricingCommand::class,
             RepriceUsageCommand::class,
+            InstallDashboardCommand::class,
         ]);
+    }
+
+    protected function shareInertiaNavigation(): void
+    {
+        if (! class_exists(Inertia::class)) {
+            return;
+        }
+
+        Inertia::share('aiUsageNavigation', fn (): ?array => $this->app->make(DashboardNavigation::class)->payload());
     }
 }

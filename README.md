@@ -9,7 +9,7 @@
     <a href="https://packagist.org/packages/sanjayacloud/ai-model-usage-tracker"><img src="https://img.shields.io/packagist/dt/sanjayacloud/ai-model-usage-tracker.svg?style=flat-square" alt="Total Downloads"></a>
 </p>
 
-Accurately track AI model usage in your Laravel app: token counts, **computed cost**, latency, success/failure, per-user attribution, and per-conversation attribution. Capture usage automatically from the first-party [`laravel/ai`](https://github.com/laravel/ai) SDK (plus Prism and raw HTTP clients), or record it manually with a fluent API. Includes a headless reporting layer, budget alerts, auto-fetched pricing, and a Blade dashboard (Inertia/Vue optional).
+Accurately track AI model usage in your Laravel app: token counts, **computed cost**, latency, success/failure, per-user attribution, and per-conversation attribution. Capture usage automatically from the first-party [`laravel/ai`](https://github.com/laravel/ai) SDK (plus Prism and raw HTTP clients), or record it manually with a fluent API. Includes a headless reporting layer, budget alerts, auto-fetched pricing, and a dashboard that can sit inside the official Laravel Vue, React, or Livewire starter kits.
 
 ## Features
 
@@ -19,7 +19,7 @@ Accurately track AI model usage in your Laravel app: token counts, **computed co
 - **Auto-fetched pricing** from LiteLLM (OpenRouter fallback) via `ai-usage:fetch-pricing` — never on the request path.
 - **Per-request, per-user, per-conversation, and feature-key** attribution.
 - **Reporting API** — totals, breakdowns by model/provider/operation, daily trends, top consumers.
-- **Budgets** with threshold events, **retention** pruning, and a **Blade dashboard** (Inertia/Vue optional).
+- **Budgets** with threshold events, **retention** pruning, and a **dashboard** (Blade by default; Vue / React / Livewire starter-kit shells optional).
 - **Sync or queued** persistence.
 
 ## Requirements
@@ -27,7 +27,7 @@ Accurately track AI model usage in your Laravel app: token counts, **computed co
 - PHP 8.3+
 - Laravel 12 or 13
 - (Optional) [`laravel/ai`](https://github.com/laravel/ai) for automatic instrumentation
-- (Optional) Inertia + Vue for the bundled dashboard
+- (Optional) Inertia + Vue or React, or the Livewire starter kit, to embed the dashboard in the app layout
 
 ## How it works
 
@@ -356,7 +356,7 @@ Schedule::command('ai-usage:prune')->daily();
 
 ## Dashboard
 
-A Blade dashboard is served at `/ai-usage` by default (no frontend build). Define the gate:
+`/ai-usage` is enabled by default. Define the gate:
 
 ```php
 use Illuminate\Support\Facades\Gate;
@@ -364,14 +364,59 @@ use Illuminate\Support\Facades\Gate;
 Gate::define('viewAiUsageDashboard', fn ($user) => $user->isAdmin());
 ```
 
-To use the Inertia/Vue page instead, set `dashboard.driver` to `inertia`, publish the Vue page, and rebuild assets:
+### Laravel starter kits (Vue, React, Livewire)
+
+If the app was created with an official Laravel starter kit, install the dashboard into that shell so it uses the same sidebar / header as `/dashboard`:
 
 ```bash
-php artisan vendor:publish --tag="ai-model-usage-tracker-assets"
+php artisan ai-usage:install
+```
+
+That command will:
+
+1. Detect **vue**, **react**, or **livewire** from the kit’s layout files (or pass `--kit=`).
+2. Publish `resources/js/pages/AiUsage/Dashboard.vue` or `.tsx` for Inertia kits.
+3. Add an **AI Usage** item to the starter-kit sidebar (or header). Skip with `--no-nav`.
+
+Then set the driver / layout to match the kit and rebuild assets for Inertia:
+
+```env
+AI_USAGE_DASHBOARD_DRIVER=inertia   # Vue or React kits
+AI_USAGE_DASHBOARD_LAYOUT=starter-kit  # Livewire / Breeze Blade layout
+```
+
+```bash
 npm run build
 ```
 
-Adjust `dashboard.path` and `dashboard.middleware` in config as needed.
+| Kit | Driver | What you get |
+|-----|--------|----------------|
+| Vue starter kit | `inertia` | Inertia page inside `AppLayout` + sidebar item |
+| React starter kit | `inertia` | Same, with the published `.tsx` page |
+| Livewire starter kit | `blade` + `layout=starter-kit` | Blade view inside `<x-layouts.app>` + Flux sidebar item |
+| No kit | `blade` (default) | Standalone HTML at `/ai-usage` |
+
+`dashboard.driver=auto` picks Inertia when a Vue/React kit is detected. `dashboard.layout=auto` uses the Livewire/Breeze app layout when that component exists, otherwise the standalone page.
+
+Inertia kits also receive a shared `aiUsageNavigation` prop (`visible`, `url`, `label`, `icon`) so a custom sidebar can do:
+
+```ts
+const nav = page.props.aiUsageNavigation
+if (nav?.visible) {
+    items.push({ title: nav.label, href: nav.url, icon: Cpu })
+}
+```
+
+Turn the shared item off with `dashboard.navigation.enabled` / `AI_USAGE_DASHBOARD_NAV=false`.
+
+Publish pages without the install command:
+
+```bash
+php artisan vendor:publish --tag="ai-model-usage-tracker-inertia-vue"
+php artisan vendor:publish --tag="ai-model-usage-tracker-inertia-react"
+```
+
+Adjust `dashboard.path` and `dashboard.middleware` as needed (`auth` is recommended for starter-kit apps).
 
 ---
 

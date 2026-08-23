@@ -162,8 +162,12 @@ return [
     | Dashboard
     |--------------------------------------------------------------------------
     |
-    | The dashboard. "driver" is "blade" (default, no frontend build) or
-    | "inertia" (requires Inertia + Vue and the published page component).
+    | The dashboard. "driver" is "blade" (default, no frontend build), "inertia"
+    | (Vue or React page in resources/js/pages), or "auto" (Inertia when a Vue
+    | or React starter kit is detected). "layout" is "auto", "starter-kit"
+    | (Livewire / Breeze app shell), or "standalone" (package HTML). "kit" is
+    | "auto", "vue", "react", "livewire", or "none". Run `php artisan ai-usage:install`
+    | to publish the matching page and add a sidebar / header link.
     | Access is protected by the "gate" ability; define it via Gate::define().
     | When "enabled" is false no routes are registered.
     |
@@ -172,9 +176,15 @@ return [
     'dashboard' => [
         'enabled' => env('AI_USAGE_DASHBOARD_ENABLED', true),
         'driver' => env('AI_USAGE_DASHBOARD_DRIVER', 'blade'),
+        'layout' => env('AI_USAGE_DASHBOARD_LAYOUT', 'auto'),
+        'kit' => env('AI_USAGE_DASHBOARD_KIT', 'auto'),
         'path' => env('AI_USAGE_DASHBOARD_PATH', 'ai-usage'),
         'middleware' => ['web'],
         'gate' => 'viewAiUsageDashboard',
+        'navigation' => [
+            'enabled' => env('AI_USAGE_DASHBOARD_NAV', true),
+            'icon' => 'Cpu',
+        ],
     ],
 
 ];

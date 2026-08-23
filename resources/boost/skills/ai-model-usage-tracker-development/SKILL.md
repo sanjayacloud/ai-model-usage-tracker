@@ -92,7 +92,7 @@ app(\AiModelUsageTracker\AiModelUsageTracker\Reporting\UsageReporter::class)
 
 Also: `totals()`, `byModel()`, `byProvider()`, `byOperation()`, `dailyTrend()`, `topConsumers()`. CLI: `php artisan ai-usage:report --days=30`.
 
-Blade dashboard is the default at `/ai-usage`. Define `Gate::define('viewAiUsageDashboard', ...)`. Set `dashboard.driver` to `inertia` only when Inertia + Vue are installed and the Vue page is published.
+Blade dashboard is the default at `/ai-usage`. Define `Gate::define('viewAiUsageDashboard', ...)`. For official starter kits run `php artisan ai-usage:install`, then set `dashboard.driver` to `inertia` (Vue/React) or `dashboard.layout` to `starter-kit` (Livewire). Inertia shares `aiUsageNavigation` for custom sidebars.
 
 Tests: `UsageRecord::factory()->create()`.
 

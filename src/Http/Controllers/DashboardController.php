@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AiModelUsageTracker\AiModelUsageTracker\Http\Controllers;
 
 use AiModelUsageTracker\AiModelUsageTracker\Reporting\UsageReporter;
+use AiModelUsageTracker\AiModelUsageTracker\Support\DashboardRenderer;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\View\View as ViewContract;
 use Illuminate\Http\Request;
@@ -17,7 +18,7 @@ class DashboardController
     /**
      * @return ViewContract|Response
      */
-    public function __invoke(Request $request, UsageReporter $reporter): mixed
+    public function __invoke(Request $request, UsageReporter $reporter, DashboardRenderer $renderer): mixed
     {
         [$from, $to] = $this->range($request);
 
@@ -31,11 +32,11 @@ class DashboardController
             'topConsumers' => $reporter->topConsumers(10, $from, $to),
         ];
 
-        if ($this->usesInertia()) {
+        if ($renderer->usesInertia()) {
             return Inertia::render('AiUsage/Dashboard', $payload);
         }
 
-        return View::make('ai-model-usage-tracker::dashboard', $payload);
+        return View::make($renderer->bladeView(), $payload);
     }
 
     /**
@@ -50,12 +51,5 @@ class DashboardController
             CarbonImmutable::now()->subDays($days)->startOfDay(),
             CarbonImmutable::now(),
         ];
-    }
-
-    protected function usesInertia(): bool
-    {
-        $driver = (string) config('ai-model-usage-tracker.dashboard.driver', 'blade');
-
-        return $driver === 'inertia' && class_exists(Inertia::class);
     }
 }
