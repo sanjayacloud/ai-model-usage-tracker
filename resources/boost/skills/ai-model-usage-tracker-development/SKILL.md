@@ -81,7 +81,7 @@ php artisan ai-usage:reprice          # zero-cost / pricing_missing only
 php artisan ai-usage:reprice --dry-run
 ```
 
-Rate keys: `input`, `output`, `cache_write`, `cache_read`, `reasoning`, `per_image`, `per_second` (per 1M tokens except the per-unit keys).
+Rate keys: `input`, `output`, `cache_write`, `cache_read`, `reasoning`, `per_image`, `per_second` (per 1M tokens except the per-unit keys). Prompt tokens are split into cache-read, cache-write, then regular input so cache is not billed twice. Reasoning is billed on top of completion tokens. `per_image` (`metadata.images` or `n`) and `per_second` (`metadata.seconds` or `duration`) are added to input cost. Total = input + output.
 
 ### 5. Report and dashboard
 

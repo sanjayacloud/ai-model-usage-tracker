@@ -234,6 +234,32 @@ Costs are computed from `pricing.models` in config, then from a **fetched catalo
 
 Published config **always wins** over fetched rates (use it for negotiated prices).
 
+### How cost is calculated
+
+Each record stores `input_cost`, `output_cost`, and `total_cost` (`input_cost + output_cost`), rounded to 8 decimal places.
+
+Prompt tokens are split so cache usage is not billed twice. Cache-read tokens are capped at prompt tokens; cache-write tokens are capped at the remainder; regular input is whatever is left:
+
+```
+regular_input = prompt_tokens − cache_read − cache_write
+
+input_cost  = (regular_input × input_rate
+             + cache_read × cache_read_rate
+             + cache_write × cache_write_rate) / 1,000,000
+            + per_image × image_count
+            + per_second × duration_seconds
+
+output_cost = (completion_tokens × output_rate
+             + reasoning_tokens × reasoning_rate) / 1,000,000
+```
+
+Reasoning tokens are billed **in addition to** completion tokens (they are not subtracted from completion the way cache tokens are subtracted from prompt). If the catalog omits `cache_write` / `cache_read`, those fall back to `input`; omitted `reasoning` falls back to `output`.
+
+Image and duration extras are added to **input cost**:
+
+- **Images:** `metadata.images`, or `metadata.n`. Image operations default to 1 when neither is set; other operations default to 0.
+- **Duration:** `metadata.seconds`, or `metadata.duration` (seconds).
+
 ### Auto-fetch (LiteLLM, then OpenRouter)
 
 Fetch does **not** run during `record()`. Refresh the catalog on a schedule:
@@ -273,7 +299,7 @@ php artisan ai-usage:reprice --all
 php artisan ai-usage:reprice --dry-run
 ```
 
-Supported rate keys: `input`, `output`, `cache_write`, `cache_read`, `reasoning`, `per_image`, `per_second`. Missing `cache_write`/`cache_read` fall back to `input`; missing `reasoning` falls back to `output`.
+Supported rate keys: `input`, `output`, `cache_write`, `cache_read`, `reasoning`, `per_image`, `per_second`. See [How cost is calculated](#how-cost-is-calculated) for fallbacks and the formula.
 
 ---
 
